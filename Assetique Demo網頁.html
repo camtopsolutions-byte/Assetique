@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assetique | Make your boutique become the true asset</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            dark: '#0B1121',
+                            primary: '#1E293B',
+                            gold: '#D4AF37',
+                            goldLight: '#F3E5AB',
+                            text: '#F8FAFC',
+                            muted: '#94A3B8',
+                            accent: '#0EA5E9'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif'],
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-in-out',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #0B1121; color: #F8FAFC; }
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.65);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+        .nav-active { color: #D4AF37; border-bottom: 2px solid #D4AF37; }
+        .tab-content { display: none; animation: fadeIn 0.5s; }
+        .tab-content.active { display: block; }
+        
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0B1121; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+
+        /* Progress Bar & Animations */
+        .timeline-dot.active { background-color: #D4AF37; box-shadow: 0 0 10px rgba(212,175,55,0.5); }
+        .carousel-enter { animation: fadeIn 0.5s forwards; }
+
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-overlay.open {
+            display: flex;
+        }
+
+        /* Mobile Menu Styles */
+        .mobile-menu {
+            display: none;
+            position: fixed;
+            top: 80px;
+            left: 0;
+            right: 0;
+            background: rgba(11, 17, 33, 0.98);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            z-index: 40;
+            padding: 1rem 0;
+        }
+        .mobile-menu.open {
+            display: block;
+        }
+        .mobile-menu-item {
+            display: block;
+            width: 100%;
+            padding: 1rem 1.5rem;
+            text-align: left;
+            color: #F8FAFC;
+            border-left: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        .mobile-menu-item:hover, .mobile-menu-item.active {
+            background: rgba(212, 175, 55, 0.1);
+            border-left-color: #D4AF37;
+            color: #D4AF37;
+        }
+    </style>
+</head>
+<body class="antialiased min-h-screen flex flex-col font-sans">
+
+    <!-- Navigation -->
+    <nav class="fixed w-full z-50 glass-panel border-b border-slate-800/60 top-0">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex justify-between items-center">
+            <!-- Logo -->
+            <div class="flex items-center gap-2 cursor-pointer" onclick="switchTab('home')">
+                <div class="w-8 h-8 border border-brand-gold rounded-sm flex items-center justify-center">
+                    <span class="font-serif text-brand-gold font-bold text-lg">A</span>
+                </div>
+                <span class="font-serif text-lg sm:text-xl md:text-2xl font-bold tracking-wider text-white">ASSETIQUE</span>
+            </div>
+            
+            <!-- Main Tabs (Desktop) -->
+            <div class="hidden md:flex space-x-8 text-sm font-medium text-gray-300">
+                <button onclick="switchTab('home')" id="nav-home" class="nav-btn nav-active py-5 transition">Home</button>
+                <button onclick="switchTab('assets')" id="nav-assets" class="nav-btn py-5 transition hover:text-brand-gold">My Assets</button>
+                <button onclick="switchTab('market')" id="nav-market" class="nav-btn py-5 transition hover:text-brand-gold">Market</button>
+                <button onclick="switchTab('lending')" id="nav-lending" class="nav-btn py-5 transition hover:text-brand-gold">Lending</button>
+            </div>
+
+            <!-- Mobile Menu Toggle Button -->
+            <button onclick="toggleMobileMenu()" class="md:hidden text-white text-xl p-2" id="mobile-menu-btn">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+
+            <!-- Search & User Profile -->
+            <div class="flex items-center gap-6">
+                <!-- Global Search (Header) -->
+                <div class="relative hidden lg:block">
+                    <input type="text" id="global-search" placeholder="Search assets & press Enter..." class="bg-slate-900/50 border border-slate-700 rounded-full py-2 px-4 pl-10 text-sm text-white focus:outline-none focus:border-brand-gold w-64 transition-all focus:w-72">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-xs"></i>
+                </div>
+
+                <!-- User Profile -->
+                <div class="flex items-center gap-2 sm:gap-3 pl-2 sm:pl-4 border-l border-slate-700">
+                    <!-- Avatar -->
+                    <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-brand-gold to-amber-700 flex items-center justify-center text-brand-dark font-bold font-serif border border-white/20 shadow-lg text-sm sm:text-base">
+                        J
+                    </div>
+                    <!-- Wallet Address -->
+                    <div class="text-right leading-tight">
+                        <p class="text-xs sm:text-sm font-semibold text-white hidden sm:block">Jason L.</p>
+                        <div class="flex items-center justify-end gap-1">
+                            <i class="fa-solid fa-wallet text-[9px] sm:text-[10px] text-brand-muted"></i>
+                            <p class="text-[10px] sm:text-xs text-brand-gold font-mono">0x71...9A21</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Mobile Menu (Hidden by default) -->
+    <div id="mobile-menu" class="mobile-menu">
+        <button onclick="switchTabMobile('home')" id="mobile-nav-home" class="mobile-menu-item active">
+            <i class="fa-solid fa-house mr-3"></i>Home
+        </button>
+        <button onclick="switchTabMobile('assets')" id="mobile-nav-assets" class="mobile-menu-item">
+            <i class="fa-solid fa-gem mr-3"></i>My Assets
+        </button>
+        <button onclick="switchTabMobile('market')" id="mobile-nav-market" class="mobile-menu-item">
+            <i class="fa-solid fa-store mr-3"></i>Market
+        </button>
+        <button onclick="switchTabMobile('lending')" id="mobile-nav-lending" class="mobile-menu-item">
+            <i class="fa-solid fa-hand-holding-dollar mr-3"></i>Lending
+        </button>
+    </div>
+
+    <!-- Main Content Container -->
+    <main class="pt-24 pb-12 flex-grow max-w-7xl mx-auto w-full px-6">
+
+        <!-- ================= TAB: HOME ================= -->
+        <div id="home" class="tab-content active">
+            
+            <!-- Hero / Slogan -->
+            <div class="text-center py-10 mb-8 relative">
+                <h1 class="font-serif text-5xl md:text-6xl text-white mb-4">
+                    Assetique
+                </h1>
+                <div class="h-1 w-24 bg-brand-gold mx-auto mb-6"></div>
+                <p class="text-xl md:text-2xl text-transparent bg-clip-text bg-gradient-to-r from-brand-goldLight to-brand-gold italic font-serif tracking-wide">
+                    Make your boutique become the true asset
+                </p>
+            </div>
+            
+            <!-- Trends Dashboard -->
+            <section class="mb-12">
+                <h2 class="font-serif text-2xl text-white mb-6 border-l-4 border-brand-gold pl-4">Platform Trends</h2>
+                <div class="grid md:grid-cols-3 gap-6">
+                    
+                    <!-- 1. Active Items (Carousel) -->
+                    <div class="glass-panel p-6 rounded-xl relative overflow-hidden group min-h-[180px]">
+                        <div class="absolute top-0 right-0 p-4 opacity-10 text-6xl text-brand-gold"><i class="fa-solid fa-fire"></i></div>
+                        <h3 class="text-brand-muted text-xs uppercase tracking-widest mb-4">Hot Items</h3>
+                        
+                        <div id="carousel-active" class="transition-all duration-500">
+                            <!-- JS Injected -->
+                        </div>
+                    </div>
+
+                    <!-- 2. Highest Price (Carousel Timeframes) -->
+                    <div class="glass-panel p-6 rounded-xl relative overflow-hidden min-h-[180px]">
+                        <div class="absolute top-0 right-0 p-4 opacity-10 text-6xl text-green-400"><i class="fa-solid fa-gavel"></i></div>
+                        <h3 class="text-brand-muted text-xs uppercase tracking-widest mb-4">Highest Price Records</h3>
+                        
+                        <div id="carousel-highprice" class="transition-all duration-500">
+                            <!-- JS Injected -->
+                        </div>
+                    </div>
+
+                    <!-- 3. Search Trends -->
+                    <div class="glass-panel p-6 rounded-xl min-h-[180px]">
+                        <h3 class="text-brand-muted text-xs uppercase tracking-widest mb-4">Search Trends</h3>
+                        <ul class="space-y-3">
+                            <li class="flex justify-between items-center border-b border-slate-700/50 pb-2">
+                                <span class="text-white text-sm flex items-center gap-2"><span class="text-brand-gold font-bold">1.</span> Nautilus</span>
+                                <span class="text-green-400 text-xs bg-green-400/10 px-2 py-0.5 rounded">High Vol</span>
+                            </li>
+                            <li class="flex justify-between items-center border-b border-slate-700/50 pb-2">
+                                <span class="text-white text-sm flex items-center gap-2"><span class="text-brand-gold font-bold">2.</span> Birkin 25</span>
+                                <span class="text-green-400 text-xs bg-green-400/10 px-2 py-0.5 rounded">+34% Search</span>
+                            </li>
+                            <li class="flex justify-between items-center">
+                                <span class="text-white text-sm flex items-center gap-2"><span class="text-brand-gold font-bold">3.</span> Richard Mille</span>
+                                <span class="text-brand-muted text-xs px-2 py-0.5 rounded text-right">+12% Search</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Industry News (Real Links) -->
+            <section>
+                <h2 class="font-serif text-2xl text-white mb-6 border-l-4 border-brand-gold pl-4">Industry Insights</h2>
+                <div class="grid md:grid-cols-3 gap-6">
+                    <!-- News 1 -->
+                    <a href="https://www.jpmorgan.com/insights/global-research/retail/luxury-market" target="_blank" class="glass-panel rounded-xl overflow-hidden group hover:border-brand-gold/50 transition">
+                        <div class="h-40 bg-slate-800 relative">
+                            <img src="https://www.jpmorgan.com/content/dam/jpm/cib/complex/content/research/luxury_market_2025/Luxury_Market_Outlook_Header_Banner.jpg" class="w-full h-full object-cover opacity-60 group-hover:scale-105 transition duration-700">
+                            <div class="absolute top-2 left-2">
+                                <span class="text-[10px] bg-brand-gold text-brand-dark px-2 py-1 rounded font-bold">Bloomberg Luxury</span>
+                            </div>
+                        </div>
+                        <div class="p-5">
+                            <h3 class="text-white font-serif text-lg leading-tight mb-2 group-hover:text-brand-gold transition">Global Luxury Market Trends</h3>
+                            <p class="text-brand-muted text-xs line-clamp-2">Discover how macroeconomic headwinds and changing consumer tastes are shaping the outlook for the luxury market into 2026.</p>
+                        </div>
+                    </a>
+                    <!-- News 2 -->
+                    <a href="https://uk.fashionnetwork.com/news/Luxury-mergers-and-acquisitions-slow-in-2024-but-still-appeal-to-investment-funds-says-deloitte,1764826.html" target="_blank" class="glass-panel rounded-xl overflow-hidden group hover:border-brand-gold/50 transition">
+                        <div class="h-40 bg-slate-800 relative">
+                            <img src="https://media.fashionnetwork.com/cdn-cgi/image/fit=contain,width=1000,height=1000,format=auto/m/353d/653e/7306/dca1/6303/80e7/9ae7/7c71/8071/d6d5/d6d5.jpg" class="w-full h-full object-cover opacity-60 group-hover:scale-105 transition duration-700">
+                            <div class="absolute top-2 left-2">
+                                <span class="text-[10px] bg-brand-gold text-brand-dark px-2 py-1 rounded font-bold">Financial Times</span>
+                            </div>
+                        </div>
+                        <div class="p-5">
+                            <h3 class="text-white font-serif text-lg leading-tight mb-2 group-hover:text-brand-gold transition">Luxury Goods Finance</h3>
+                            <p class="text-brand-muted text-xs line-clamp-2">Imergers and acquisitions slow in 2024 but still appeal to investment funds, says Deloitte.</p>
+                        </div>
+                    </a>
+                    <!-- News 3 -->
+                    <a href="https://medium.com/@techstyleedit/how-sustainability-became-a-core-value-for-luxury-fashion-1157346650bb" target="_blank" class="glass-panel rounded-xl overflow-hidden group hover:border-brand-gold/50 transition">
+                        <div class="h-40 bg-slate-800 relative">
+                            <img src="https://miro.medium.com/v2/resize:fit:720/format:webp/0*jLF4h2HuJyB_eHvG.png" class="w-full h-full object-cover opacity-60 group-hover:scale-105 transition duration-700">
+                            <div class="absolute top-2 left-2">
+                                <span class="text-[10px] bg-brand-gold text-brand-dark px-2 py-1 rounded font-bold">Vogue Business</span>
+                            </div>
+                        </div>
+                        <div class="p-5">
+                            <h3 class="text-white font-serif text-lg leading-tight mb-2 group-hover:text-brand-gold transition">Fashion Industry Tech</h3>
+                            <p class="text-brand-muted text-xs line-clamp-2">How Sustainability became a Core Value for Luxury Fashion.</p>
+                        </div>
+                    </a>
+                </div>
+            </section>
+        </div>
+
+        <!-- ================= TAB: MY ASSETS ================= -->
+        <div id="assets" class="tab-content">
+            <div class="flex justify-between items-end mb-8">
+                <h2 class="font-serif text-3xl text-white">My Portfolio</h2>
+                <div class="text-right">
+                    <p class="text-brand-muted text-sm">Total Asset Value</p>
+                    <p class="text-2xl font-serif text-white">$142,500 USDM</p>
+                </div>
+            </div>
+
+            <div class="space-y-6">
+                
+                <!-- 1. Status: Identifying -->
+                <div class="glass-panel p-6 rounded-xl border-l-4 border-blue-500">
+                    <div class="flex justify-between items-start mb-6">
+                        <div class="flex gap-4">
+                            <img src="https://productimg.xbiao.com/87/300_450/2489814581196103.jpg" class="w-20 h-20 rounded object-cover border border-slate-600">
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <h3 class="text-lg font-serif text-white">Richard Mille RM 011</h3>
+                                    <span class="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded border border-blue-500/50">Authentication in Progress</span>
+                                </div>
+                                <p class="text-xs text-brand-muted mt-1">Submitted: 2025-11-20</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Progress Bar -->
+                    <div class="relative px-4 mt-4">
+                        <div class="h-0.5 w-full bg-slate-700 absolute top-3 left-0 z-0"></div>
+                        <div class="h-0.5 bg-brand-gold absolute top-3 left-0 z-0 transition-all duration-1000" style="width: 50%"></div>
+                        <div class="relative z-10 flex justify-between text-xs text-brand-muted">
+                            <div class="text-center"><div class="w-5 h-5 rounded-full bg-brand-gold border-2 border-brand-dark mx-auto mb-2 shadow-[0_0_10px_#D4AF37]"></div><span class="text-brand-gold">Shipping</span></div>
+                            <div class="text-center"><div class="w-5 h-5 rounded-full bg-brand-gold border-2 border-brand-dark mx-auto mb-2"></div><span class="text-brand-gold">Arrived</span></div>
+                            <div class="text-center"><div class="w-5 h-5 rounded-full bg-brand-gold animate-pulse border-2 border-brand-dark mx-auto mb-2"></div><span class="text-brand-gold font-bold">Authenticating</span></div>
+                            <div class="text-center"><div class="w-5 h-5 rounded-full bg-slate-800 border-2 border-slate-600 mx-auto mb-2"></div><span>View Report</span></div>
+                            <div class="text-center"><div class="w-5 h-5 rounded-full bg-slate-800 border-2 border-slate-600 mx-auto mb-2"></div><span>Vault Storage</span></div>
+                            <div class="text-center"><div class="w-5 h-5 rounded-full bg-slate-800 border-2 border-slate-600 mx-auto mb-2"></div><span>Mint NFT</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Status: Collection -->
+                <div class="glass-panel p-6 rounded-xl border-l-4 border-green-500">
+                    <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+                        <div class="flex gap-4 items-center">
+                            <img src="https://realyou.com.tw/cdn/shop/files/kelly28-62.5w_epsom_1_6fe2e040-a4ea-4457-98ec-f180ca0b56be_grande.jpg?v=1737612555" class="w-16 h-16 md:w-20 md:h-20 rounded object-cover border border-slate-600 flex-shrink-0">
+                            <div class="min-w-0">
+                                <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+                                    <h3 class="text-base md:text-lg font-serif text-white truncate">Hermès Kelly 28</h3>
+                                    <span class="text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded border border-green-500/50 w-fit">In Collection</span>
+                                </div>
+                                <p class="text-xs text-brand-muted mt-1">Vault: Geneva Free Port</p>
+                            </div>
+                        </div>
+                        <div class="flex flex-col sm:flex-row gap-2 md:gap-3">
+                            <button onclick="openModal('modal-report')" class="px-4 py-2 border border-slate-600 rounded text-xs text-white hover:border-brand-gold hover:text-brand-gold transition whitespace-nowrap">
+                                View NFT & Report
+                            </button>
+                            <button onclick="confirmListing('Hermès Kelly 28')" class="px-4 py-2 bg-brand-gold text-brand-dark rounded text-xs font-bold hover:bg-white transition whitespace-nowrap">
+                                List for Auction
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Status: Listing -->
+                <div class="glass-panel p-6 rounded-xl border-l-4 border-purple-500 bg-purple-900/10">
+                    <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+                        <div class="flex gap-4 items-center">
+                            <img src="https://luxurywatcher.com/uploads/article/3/2/32718/1673521992181.jpg" class="w-16 h-16 md:w-20 md:h-20 rounded object-cover border border-slate-600 flex-shrink-0">
+                            <div class="min-w-0">
+                                <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+                                    <h3 class="text-base md:text-lg font-serif text-white truncate">Rolex Submariner Hulk</h3>
+                                    <span class="text-[10px] bg-purple-500/20 text-purple-400 px-2 py-0.5 rounded border border-purple-500/50 w-fit">Listed for Auction</span>
+                                </div>
+                                <p class="text-xs text-brand-muted mt-1">Asking Price: 25,000 USDM</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-3">
+                            <!-- Cancel Auction Button -->
+                            <button onclick="cancelListing('Rolex Submariner Hulk')" class="px-4 py-2 border border-red-500/50 text-red-400 rounded text-xs hover:bg-red-500 hover:text-white transition whitespace-nowrap">
+                                <i class="fa-solid fa-ban mr-1"></i> Cancel Auction
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. Status: Staking -->
+                <div class="glass-panel p-6 rounded-xl border-l-4 border-brand-gold bg-brand-gold/5">
+                    <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+                        <div class="flex gap-4 items-center">
+                            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT_7K5pMBCqDlk6_nIcrJI-xhl25lioZPZUIA&s" class="w-16 h-16 md:w-20 md:h-20 rounded object-cover border border-slate-600 flex-shrink-0">
+                            <div class="min-w-0">
+                                <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+                                    <h3 class="text-base md:text-lg font-serif text-white truncate">Cartier 2ct Diamond Ring</h3>
+                                    <span class="text-[10px] bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded border border-yellow-500/50 w-fit">Staked</span>
+                                </div>
+                                <p class="text-xs text-brand-muted mt-1">Loan ID: #LN-9921</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-3">
+                            <!-- View Loan Details Button -->
+                            <button onclick="openModal('modal-loan')" class="px-4 py-2 bg-brand-primary border border-brand-gold text-brand-gold rounded text-xs font-bold hover:bg-brand-gold hover:text-brand-dark transition whitespace-nowrap">
+                                <i class="fa-solid fa-file-invoice-dollar mr-1"></i> View Loan Details
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= TAB: MARKET ================= -->
+        <div id="market" class="tab-content">
+            <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+                <h2 class="font-serif text-3xl text-white">Marketplace</h2>
+                
+                <!-- Market Search & Filters -->
+                <div class="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+                    <div class="relative">
+                        <input type="text" id="market-search" placeholder="Filter marketplace..." class="bg-slate-900 border border-slate-700 rounded px-4 py-2 pl-9 text-sm text-white w-full md:w-64 focus:border-brand-gold focus:outline-none">
+                        <i class="fa-solid fa-filter absolute left-3 top-3 text-slate-500 text-xs"></i>
+                    </div>
+                    <div class="flex gap-2 overflow-x-auto pb-2 md:pb-0">
+                        <button onclick="filterMarket('all')" class="filter-btn active px-4 py-2 bg-brand-gold text-brand-dark rounded text-xs font-bold">All</button>
+                        <button onclick="filterMarket('bag')" class="filter-btn px-4 py-2 glass-panel rounded text-xs hover:text-brand-gold">Bags</button>
+                        <button onclick="filterMarket('watch')" class="filter-btn px-4 py-2 glass-panel rounded text-xs hover:text-brand-gold">Watches</button>
+                        <button onclick="filterMarket('jewelry')" class="filter-btn px-4 py-2 glass-panel rounded text-xs hover:text-brand-gold">Jewelry</button>
+                        <button onclick="filterMarket('other')" class="filter-btn px-4 py-2 glass-panel rounded text-xs hover:text-brand-gold">Others</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Market Grid -->
+            <div id="market-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                <!-- JS Populated -->
+            </div>
+            <div id="no-results" class="hidden text-center py-20 text-brand-muted">
+                <i class="fa-solid fa-box-open text-4xl mb-4"></i>
+                <p>No items found matching your search.</p>
+            </div>
+        </div>
+
+        <!-- ================= TAB: LENDING ================= -->
+        <div id="lending" class="tab-content">
+            <div class="max-w-5xl mx-auto">
+                <div class="text-center py-8">
+                    <h2 class="font-serif text-3xl text-white mb-4">Liquidity Protocol</h2>
+                    <p class="text-brand-muted max-w-2xl mx-auto">
+                        Select an asset from your portfolio to instantly unlock liquidity.
+                        <br>Loan-to-Value (LTV) is determined by the asset's grade (A: 80%, B: 60%, C: 30%).
+                    </p>
+                </div>
+                
+                <div class="glass-panel p-8 rounded-2xl border border-brand-gold/30">
+                    <h3 class="text-xl font-serif text-white mb-6">Available for Staking:</h3>
+                    
+                    <!-- Lending Asset List (JS Generated) -->
+                    <div id="lending-list" class="space-y-4">
+                        <!-- Items will be injected here -->
+                    </div>
+
+                    <div class="mt-8 p-4 bg-brand-gold/10 rounded border border-brand-gold/30 text-center">
+                        <p class="text-sm text-brand-gold mb-2"><i class="fa-solid fa-circle-info mr-1"></i> Click on an asset above to proceed with the loan application.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ================= MODALS ================= -->
+
+    <!-- Modal: Cancel Listing -->
+    <div id="modal-cancel-listing" class="fixed inset-0 z-[100] hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="glass-panel bg-slate-900 w-full max-w-md rounded-xl p-8 border border-slate-700 text-center">
+            <div class="w-16 h-16 bg-red-500/20 text-red-400 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+                <i class="fa-solid fa-ban"></i>
+            </div>
+            <h3 class="text-xl font-serif text-white mb-2">Asset Delisted</h3>
+            <p id="delist-msg" class="text-brand-muted text-sm mb-6">Your asset has been removed from the marketplace.</p>
+            <button onclick="hideModal('modal-cancel-listing')" class="w-full bg-slate-700 text-white py-2 rounded hover:bg-slate-600">Close</button>
+        </div>
+    </div>
+
+    <!-- Modal: Report (Collection) -->
+    <div id="modal-report" class="modal-overlay" onclick="closeModal(event, 'modal-report')">
+        <div class="glass-panel w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-xl m-4 border border-brand-gold/30 shadow-2xl" onclick="event.stopPropagation()">
+            <div class="p-6 bg-brand-panel/90 backdrop-blur relative">
+                <button onclick="closeModal(null, 'modal-report')" class="absolute top-4 right-4 text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+
+                <div class="flex justify-between items-start mb-6 border-b border-slate-700 pb-4">
+                    <div>
+                        <h2 class="font-serif text-2xl text-white">Assetique Verification Report</h2>
+                        <p class="text-brand-gold font-mono text-sm">NFT ID: #8821 • Grade A</p>
+                    </div>
+                    <img src="https://play-lh.googleusercontent.com/BzpWa8LHTBzJq3bxOUjl-Bp7ixh2VOV_5zk6hZjrk57wRp7sc_kvrf3HCrjdKHL_BtbG" class="w-10 h-10 opacity-50">
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-8">
+                    <!-- Info -->
+                    <div class="space-y-4">
+                        <div>
+                            <p class="text-xs text-brand-muted">Product Name</p>
+                            <p class="text-white font-medium">Hermès Birkin 25</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-brand-muted">Brand / Year</p>
+                            <p class="text-white">Hermès / 2022 (U Stamp)</p>
+                        </div>
+                        <div class="p-3 bg-slate-800 rounded border border-slate-700">
+                            <p class="text-xs text-brand-muted mb-1">Condition Grade</p>
+                            <p class="text-green-400 text-sm"><i class="fa-solid fa-check-circle mr-1"></i> Excellent Condition (Mint)</p>
+                            <p class="text-[10px] text-slate-500 mt-1">Verified by Assetique AI & Chief Authenticator.</p>
+                        </div>
+                    </div>
+                    <!-- Maintenance Log -->
+                    <div>
+                        <h3 class="text-sm text-brand-muted mb-3 uppercase">Maintenance & Service History</h3>
+                        <div class="relative pl-4 border-l border-slate-700 space-y-4">
+                            <div class="relative">
+                                <div class="absolute -left-[21px] top-1 w-3 h-3 bg-brand-gold rounded-full"></div>
+                                <p class="text-xs text-white">Regular Leather Care</p>
+                                <p class="text-[10px] text-slate-500">2023-12-10 by Assetique Lab</p>
+                            </div>
+                            <div class="relative">
+                                <div class="absolute -left-[21px] top-1 w-3 h-3 bg-slate-600 rounded-full"></div>
+                                <p class="text-xs text-white">Initial Inspection</p>
+                                <p class="text-[10px] text-slate-500">2023-10-24</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-8 pt-6 border-t border-slate-700">
+                    <h3 class="text-sm text-brand-muted mb-3 uppercase">Transaction History</h3>
+                    <table class="w-full text-xs text-left">
+                        <thead class="text-slate-500 border-b border-slate-700">
+                            <tr><th class="pb-2">Date</th><th class="pb-2">Event</th><th class="pb-2">Price</th><th class="pb-2">From/To</th></tr>
+                        </thead>
+                        <tbody class="text-slate-300">
+                            <tr><td class="py-2">2023-10-24</td><td>Minted</td><td>-</td><td>Null -> 0x8A...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Auction Success -->
+    <div id="modal-auction" class="modal-overlay" onclick="closeModal(event, 'modal-auction')">
+        <div class="glass-panel w-full max-w-sm p-8 rounded-xl text-center border border-green-500/30 shadow-[0_0_30px_rgba(16,185,129,0.2)]" onclick="event.stopPropagation()">
+            <div class="w-16 h-16 bg-green-500/20 text-green-400 rounded-full flex items-center justify-center text-3xl mx-auto mb-4 border border-green-500/50">
+                <i class="fa-solid fa-gavel"></i>
+            </div>
+            <h3 class="text-xl font-serif text-white mb-2">Listed Successfully</h3>
+            <p class="text-sm text-brand-muted mb-6">Your asset <span class="text-brand-gold">Hermès Kelly 28</span> is now listed for auction on the marketplace.</p>
+            <button onclick="closeModal(null, 'modal-auction')" class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-500 transition">Confirm</button>
+        </div>
+    </div>
+
+    <!-- Modal: Loan Details (Staking) -->
+    <div id="modal-loan" class="modal-overlay" onclick="closeModal(event, 'modal-loan')">
+        <div class="glass-panel w-full max-w-md rounded-xl border border-purple-500/30 shadow-2xl" onclick="event.stopPropagation()">
+            <div class="p-6 bg-brand-panel/95">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-serif text-white">Loan Details</h3>
+                    <button onclick="closeModal(null, 'modal-loan')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center p-3 bg-slate-800/50 rounded">
+                        <span class="text-sm text-brand-muted">Loan Amount</span>
+                        <span class="text-lg font-bold text-white">12,000 USDM</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-brand-muted">Interest Rate (APR)</span>
+                        <span class="text-sm text-white">8.5%</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-brand-muted">Days Remaining</span>
+                        <span class="text-sm text-orange-400">14 Days</span>
+                    </div>
+
+                    <div class="border-t border-slate-700 my-4 pt-4">
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-brand-muted">Repayment Progress</span>
+                            <span class="text-white">2,000 / 12,085 USDM</span>
+                        </div>
+                        <div class="h-2 bg-slate-700 rounded-full overflow-hidden">
+                            <div class="h-full bg-purple-500 w-[16%]"></div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between items-center pt-2">
+                        <span class="text-sm text-brand-muted">Balance Due</span>
+                        <span class="text-xl font-serif text-brand-gold">10,085 USDM</span>
+                    </div>
+                </div>
+
+                <button class="w-full mt-6 bg-purple-600 text-white py-3 rounded font-bold hover:bg-purple-500 transition">Repay Now</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JS Logic -->
+    <script>
+        // --- 1. Data Source ---
+        const marketItems = [
+            // Bags
+            { id: 1, type: 'bag', name: 'Hermès Birkin 25', brand: 'Hermès', price: '12,000 USDM', img: 'https://cs-a.ecimg.tw/items/DICKAJA900FAPZY/000001_1657866668.jpg' },
+            { id: 2, type: 'bag', name: 'Chanel Classic Flap', brand: 'Chanel', price: '78,500 USDM', img: 'https://shoplineimg.com/5ffe6278cedfd800141030b8/654d9770aeb18c001aec29c0/800x.jpg?' },
+            { id: 3, type: 'bag', name: 'Lady Dior', brand: 'Dior', price: '72,000 USDM', img: 'https://assets.christiandior.com/is/image/diorprod/M0538ONGEM55U_E01-1?$default_GHC$&crop=516,546,1422,1252&wid=1850&hei=2000&scale=0.875&bfc=on&qlt=85' },
+            { id: 4, type: 'bag', name: 'LV Capucines', brand: 'Louis Vuitton', price: '7,500 USDM', img: 'https://images.popchill.com/products/25042260767442/17453119675253_4516-S.jpg' },
+            // Watches
+            { id: 5, type: 'watch', name: 'Rolex Daytona', brand: 'Rolex', price: '48,400 USDM', img: 'https://cdn.hk01.com/di/media/images/dw/20211116/537330734390579200851946.jpeg/c-s-QOuZZ65DqMP_P1ULDslmiHlRAlaSOwHjxzsB48c?v=w1920' },
+            { id: 6, type: 'watch', name: 'Patek Nautilus', brand: 'Patek Philippe', price: '89,000 USDM', img: 'https://encrypted-tbn2.gstatic.com/shopping?q=tbn:ANd9GcTUyxyEMdmgyk51WYOsy7ygo9aV1nmUD0xUGgxygp1DG6_b4QXdfGiCzyEafzi6ajO8HKRLzhrzyuDWgEKGRR38zcezyx5z7g' },
+            { id: 7, type: 'watch', name: 'AP Royal Oak', brand: 'Audemars Piguet', price: '40,000 USDM', img: 'https://luxurywatcher.com/uploads/article/3/0/30154/1604654672180.jpg' },
+            { id: 8, type: 'watch', name: 'Omega Speedmaster', brand: 'Omega', price: '7,000 USDM', img: 'https://horoguides.com/tw/downloads/bestchose/pic/pic_con/201907/20190701830264.png' },
+            // Jewelry
+            { id: 9, type: 'jewelry', name: 'Cartier Love', brand: 'Cartier', price: '3,000 USDM', img: 'https://www.isale.shop/wp-content/uploads/2022/10/isale%E7%B6%B2%E7%AB%99%E5%9C%96%E7%89%87%E6%A0%BC%E5%BC%8F-3-6.jpg' },
+            { id: 10, type: 'jewelry', name: 'Tiffany Solitaire', brand: 'Tiffany & Co.', price: '10,000 USDM', img: 'https://img.shoplineapp.com/media/image_clips/62fa4cd72dadaa00220f201f/original.jpg?1660570838' },
+            { id: 11, type: 'jewelry', name: 'VCA Alhambra', brand: 'Van Cleef', price: '10,000 USDM', img: 'https://www.vancleefarpels.com/content/dam/vancleefarpels/collections/jewelry/alhambra/2024/coeur-de-page/van-cleef-arpels-page-alhambra-guilloche-collection-joaillerie-carrousel-2760-2760-05.jpg' },
+            { id: 12, type: 'jewelry', name: 'Bulgari Serpenti', brand: 'Bulgari', price: '10,500 USDM', img: 'https://img.chrono24.com/images/uhren/4stm4agc4vvw-8ifbu6mom7vazxbzgvnifegt-ExtraLarge.jpg' },
+            // Others
+            { id: 13, type: 'other', name: 'Macallan 1926', brand: 'Macallan', price: '700,000 USDM', img: 'https://cdn.ttv.com.tw/summernotefiles/News/745f1844-3bcd-4990-bff8-aa26c83a18e4.jpg' },
+            { id: 14, type: 'other', name: 'Kaws Companion', brand: 'KAWS', price: '7,500 USDM', img: 'https://auctions.c.yimg.jp/images.auctions.yahoo.co.jp/image/dr000/auc0410/users/608f78775bce0181d7eafc9b90d72a3b6185c625/i-img1042x1200-1698501756pqogxa1639443.jpg' },
+            { id: 15, type: 'other', name: 'Rothko Print', brand: 'Art', price: '86,000,000 USDM', img: 'https://ideelart.com/cdn/shop/articles/7_1512366739gu7Fz_1_11aad14d-4976-45a4-a89f-ca5a12cce804-9777457.jpg?v=1761849140&width=2048' },
+            { id: 16, type: 'other', name: 'Dom Pérignon 1990', brand: 'Dom Pérignon', price: '1,500 USDM', img: 'https://www.twomoreglasses.com/cdn/shop/products/DomPerignon1990.jpg?v=1698737519' },
+        ];
+
+        // My Lending Assets (Logic Source)
+        const myLendingAssets = [
+            { name: "Hermès Kelly 28", grade: "A", value: 12000, img: "https://realyou.com.tw/cdn/shop/files/kelly28-62.5w_epsom_1_6fe2e040-a4ea-4457-98ec-f180ca0b56be_grande.jpg?v=1737612555" },
+            { name: "Rolex Submariner", grade: "B", value: 17600, img: "https://image.formosatimes.com.tw/media_master/47571/m126613lb-0002.webp" },
+            { name: "Vintage Omega", grade: "C", value: 3000, img: "https://media.gq.com.tw/photos/5dbcb005fb88d10008328756/16:9/w_1280,c_limit/2015091552991317.png" }
+        ];
+
+        // Current market filter state
+        let currentMarketCategory = 'all';
+
+        // --- 2. Navigation & Search ---
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('nav-active', 'text-brand-gold'));
+            const activeBtn = document.getElementById('nav-' + tabId);
+            if(activeBtn) { activeBtn.classList.add('nav-active'); }
+        }
+
+        // Mobile Menu Functions
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            const btn = document.getElementById('mobile-menu-btn');
+            const icon = btn.querySelector('i');
+
+            menu.classList.toggle('open');
+
+            // Toggle icon between bars and X
+            if(menu.classList.contains('open')) {
+                icon.classList.remove('fa-bars');
+                icon.classList.add('fa-xmark');
+            } else {
+                icon.classList.remove('fa-xmark');
+                icon.classList.add('fa-bars');
+            }
+        }
+
+        function switchTabMobile(tabId) {
+            // Switch tab content
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+
+            // Update desktop nav
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('nav-active', 'text-brand-gold'));
+            const activeBtn = document.getElementById('nav-' + tabId);
+            if(activeBtn) { activeBtn.classList.add('nav-active'); }
+
+            // Update mobile nav
+            document.querySelectorAll('.mobile-menu-item').forEach(item => item.classList.remove('active'));
+            const activeMobileBtn = document.getElementById('mobile-nav-' + tabId);
+            if(activeMobileBtn) { activeMobileBtn.classList.add('active'); }
+
+            // Close mobile menu
+            toggleMobileMenu();
+
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Search Engine Logic
+        document.getElementById('global-search').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                const term = e.target.value;
+                switchTab('market'); // 1. Switch Tab
+                document.getElementById('market-search').value = term; // 2. Sync Input
+                renderMarket('all', term); // 3. Execute Search
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        });
+
+        // Market search input listener - preserves current filter category
+        document.getElementById('market-search').addEventListener('input', function(e) {
+            renderMarket(currentMarketCategory, e.target.value);
+        });
+
+        // --- 3. Market & Lending Renderers ---
+        function renderMarket(category = 'all', searchTerm = '') {
+            const container = document.getElementById('market-grid');
+            const noRes = document.getElementById('no-results');
+            container.innerHTML = '';
+            
+            const filtered = marketItems.filter(item => {
+                const matchCat = category === 'all' || item.type === category;
+                const matchSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) || item.brand.toLowerCase().includes(searchTerm.toLowerCase());
+                return matchCat && matchSearch;
+            });
+
+            if(filtered.length === 0) {
+                noRes.classList.remove('hidden');
+            } else {
+                noRes.classList.add('hidden');
+                filtered.forEach(item => {
+                    const card = `
+                        <div class="glass-panel rounded-lg overflow-hidden hover:border-brand-gold/50 transition group cursor-pointer">
+                            <div class="relative h-48 bg-slate-800 overflow-hidden">
+                                <img src="${item.img}" class="w-full h-full object-cover group-hover:scale-110 transition duration-700">
+                                <span class="absolute top-2 right-2 bg-black/60 backdrop-blur px-2 py-0.5 text-[10px] text-white border border-white/20 rounded">Grade A</span>
+                            </div>
+                            <div class="p-4">
+                                <p class="text-[10px] text-brand-gold uppercase mb-1">${item.brand}</p>
+                                <h3 class="font-serif text-md text-white leading-tight mb-3 truncate">${item.name}</h3>
+                                <div class="flex justify-between items-end border-t border-slate-700/50 pt-2">
+                                    <div><p class="text-white font-bold">${item.price}</p></div>
+                                    <button class="text-xs bg-brand-gold text-brand-dark px-2 py-1 rounded hover:bg-white transition">Buy</button>
+                                </div>
+                            </div>
+                        </div>`;
+                    container.innerHTML += card;
+                });
+            }
+        }
+
+        function filterMarket(category) {
+            // Save the current category state
+            currentMarketCategory = category;
+
+            // Update button styles
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('bg-brand-gold', 'text-brand-dark');
+                btn.classList.add('glass-panel');
+            });
+
+            // Find and highlight the clicked button
+            const clickedBtn = Array.from(document.querySelectorAll('.filter-btn')).find(btn => {
+                return btn.textContent.toLowerCase().includes(category) ||
+                       (category === 'all' && btn.textContent.toLowerCase().includes('all'));
+            });
+
+            if(clickedBtn) {
+                clickedBtn.classList.remove('glass-panel');
+                clickedBtn.classList.add('bg-brand-gold', 'text-brand-dark');
+            }
+
+            // Render with current search term
+            renderMarket(category, document.getElementById('market-search').value);
+        }
+
+        // Render Lending Page based on Rules (Grade -> LTV)
+        function renderLending() {
+            const container = document.getElementById('lending-list');
+            container.innerHTML = '';
+            
+            myLendingAssets.forEach(asset => {
+                let ltv = 0;
+                let color = '';
+                if(asset.grade === 'A') { ltv = 0.8; color = 'text-green-400'; }
+                else if(asset.grade === 'B') { ltv = 0.6; color = 'text-yellow-400'; }
+                else { ltv = 0.3; color = 'text-red-400'; }
+
+                const loanAmount = (asset.value * ltv).toLocaleString();
+                
+                const item = `
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 p-4 bg-slate-800/50 rounded-lg hover:bg-slate-800 cursor-pointer border border-transparent hover:border-brand-gold transition" onclick="alert('Processing loan for ${asset.name}...')">
+                        <div class="flex items-center gap-4">
+                            <img src="${asset.img}" class="w-14 h-14 rounded object-cover flex-shrink-0">
+                            <div class="min-w-0">
+                                <h4 class="text-white font-medium truncate">${asset.name}</h4>
+                                <p class="text-xs text-brand-muted">Est. Value: $${asset.value.toLocaleString()}</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-4 md:gap-6 justify-between md:justify-end text-center md:text-right">
+                            <div class="w-16">
+                                <p class="text-[10px] text-brand-muted mb-1">Grade</p>
+                                <p class="font-bold ${color}">${asset.grade}</p>
+                            </div>
+                            <div class="w-16">
+                                <p class="text-[10px] text-brand-muted mb-1">LTV</p>
+                                <p class="text-white">${ltv*100}%</p>
+                            </div>
+                             <div class="w-24 md:w-28">
+                                <p class="text-[10px] text-brand-muted mb-1">Max Loan</p>
+                                <p class="text-brand-gold font-bold font-mono text-sm md:text-base">$${loanAmount}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += item;
+            });
+        }
+
+        // --- 4. Home Page Carousels ---
+        function startHomeCarousels() {
+            // Active Items Carousel
+            const activeData = [
+                { name: "Rolex Daytona Panda", sub: "Ref. 116500LN", trend: "+12.5%" },
+                { name: "Patek Philippe 5711", sub: "Blue Dial", trend: "+8.2%" },
+                { name: "Audemars Piguet Jumbo", sub: "16202ST", trend: "+5.1%" }
+            ];
+            let iActive = 0;
+            setInterval(() => {
+                const el = document.getElementById('carousel-active');
+                el.style.opacity = 0;
+                setTimeout(() => {
+                    el.innerHTML = `
+                        <div class="carousel-enter">
+                            <h4 class="text-xl font-serif text-white">${activeData[iActive].name}</h4>
+                            <p class="text-sm text-brand-muted">${activeData[iActive].sub}</p>
+                            <p class="text-green-400 font-bold mt-2"><i class="fa-solid fa-arrow-trend-up"></i> ${activeData[iActive].trend} Vol</p>
+                        </div>`;
+                    el.style.opacity = 1;
+                    iActive = (iActive + 1) % activeData.length;
+                }, 500);
+            }, 4000);
+
+            // Highest Price Carousel (Timeframes)
+            const priceData = [
+                { time: "24 Hours", name: "Hermès Himalaya Birkin", price: "$185,000" },
+                { time: "3 Days", name: "Richard Mille RM 56-02", price: "$2,200,000" },
+                { time: "1 Week", name: "Patek Philippe Grandmaster", price: "$31,000,000" },
+                { time: "1 Month", name: "Paul Newman Daytona", price: "$17,800,000" }
+            ];
+            let iPrice = 0;
+            setInterval(() => {
+                const el = document.getElementById('carousel-highprice');
+                el.style.opacity = 0;
+                setTimeout(() => {
+                    el.innerHTML = `
+                        <div class="carousel-enter">
+                            <span class="text-[10px] bg-slate-700 text-white px-2 py-0.5 rounded mb-2 inline-block">${priceData[iPrice].time} Record</span>
+                            <h4 class="text-xl font-serif text-white">${priceData[iPrice].name}</h4>
+                            <p class="text-brand-gold font-mono font-bold mt-1 text-2xl">${priceData[iPrice].price}</p>
+                        </div>`;
+                    el.style.opacity = 1;
+                    iPrice = (iPrice + 1) % priceData.length;
+                }, 500);
+            }, 5000);
+        }
+
+        // --- 5. Modal Actions ---
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add('open');
+        }
+
+        function closeModal(event, modalId) {
+            if (event === null || event.target.id === modalId) {
+                document.getElementById(modalId).classList.remove('open');
+            }
+        }
+
+        function confirmListing(name) {
+            openModal('modal-auction');
+        }
+
+        function cancelListing(name) {
+            document.getElementById('delist-msg').innerText = `Your asset "${name}" has been removed from the marketplace.`;
+            document.getElementById('modal-cancel-listing').classList.remove('hidden');
+        }
+
+        function hideModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            renderMarket();
+            renderLending();
+            startHomeCarousels();
+            // Initial render for carousels to avoid delay
+            document.getElementById('carousel-active').innerHTML = `<h4 class="text-xl font-serif text-white">Rolex Daytona Panda</h4><p class="text-sm text-brand-muted">Ref. 116500LN</p><p class="text-green-400 font-bold mt-2">+12.5% Vol</p>`;
+            document.getElementById('carousel-highprice').innerHTML = `<span class="text-[10px] bg-slate-700 text-white px-2 py-0.5 rounded mb-2 inline-block">24 Hours Record</span><h4 class="text-xl font-serif text-white">Hermès Himalaya Birkin</h4><p class="text-brand-gold font-mono font-bold mt-1 text-2xl">$185,000</p>`;
+        });
+
+    </script>
+</body>
+</html>
