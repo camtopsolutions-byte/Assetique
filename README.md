@@ -3,7 +3,7 @@
 
 ## 展示網頁鏈結: 
 [點此開啟 Assetique Demo 網頁]   
-https://www.camtop.net/Assetique/
+https://www.camtop.net/Assetique_DEMO/
 
 ## 🏷️ 專案簡介
 Assetique 是一個高價值動產 RWA（Real World Assets）交易與金融平台的展示網頁，專注於奢侈品資產的數位化、認證、交易與流動性管理。
